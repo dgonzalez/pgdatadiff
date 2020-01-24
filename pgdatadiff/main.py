@@ -18,7 +18,7 @@ Options:
 import pkg_resources
 from fabulous.color import red
 
-from pgdatadiff import DBDiff
+from pgdatadiff.pgdatadiff import DBDiff
 from docopt import docopt
 
 
