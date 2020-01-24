@@ -19,7 +19,7 @@ def make_session(connection_string):
 
 class DBDiff(object):
 
-    def __init__(self, firstdb, seconddb, chunk_size=10000, count_only=False):
+    def __init__(self, firstdb, seconddb, chunk_size=10000, count_only=False, tables=()):
         firstsession, firstengine = make_session(firstdb)
         secondsession, secondengine = make_session(seconddb)
         self.firstsession = firstsession
@@ -32,6 +32,10 @@ class DBDiff(object):
         self.secondinspector = inspect(secondengine)
         self.chunk_size = int(chunk_size)
         self.count_only = count_only
+        if tables is not None:
+            self.tables = tables.split(',')
+        else:
+            self.tables = None
 
     def diff_table_data(self, tablename):
         try:
@@ -84,7 +88,7 @@ class DBDiff(object):
         return True, "data is identical."
 
     def get_all_sequences(self):
-        GET_SEQUENCES_SQL = """SELECT c.relname FROM 
+        GET_SEQUENCES_SQL = """SELECT c.relname FROM
         pg_class c WHERE c.relkind = 'S';"""
         return [x[0] for x in
                 self.firstsession.execute(GET_SEQUENCES_SQL).fetchall()]
@@ -142,18 +146,19 @@ class DBDiff(object):
             tables = sorted(
                 self.firstinspector.get_table_names(schema="public"))
             for table in tables:
-                with Halo(
-                        text=f"Analysing table {table}. "
-                             f"[{tables.index(table) + 1}/{len(tables)}]",
-                        spinner='dots') as spinner:
-                    result, message = self.diff_table_data(table)
-                    if result is True:
-                        spinner.succeed(f"{table} - {message}")
-                    elif result is None:
-                        spinner.warn(f"{table} - {message}")
-                    else:
-                        failures += 1
-                        spinner.fail(f"{table} - {message}")
+                if self.tables is None or table in self.tables:
+                    with Halo(
+                            text=f"Analysing table {table}. "
+                                f"[{tables.index(table) + 1}/{len(tables)}]",
+                            spinner='dots') as spinner:
+                        result, message = self.diff_table_data(table)
+                        if result is True:
+                            spinner.succeed(f"{table} - {message}")
+                        elif result is None:
+                            spinner.warn(f"{table} - {message}")
+                        else:
+                            failures += 1
+                            spinner.fail(f"{table} - {message}")
         print(bold(green('Table analysis complete.')))
         if failures > 0:
             return 1
