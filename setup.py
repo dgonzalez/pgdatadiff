@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='pgdatadiff',
     packages=['pgdatadiff'],
-    url='https://github.com/dmarkey/pgdatadiff',
+    url='https://github.com/dgonzalez/pgdatadiff',
     python_requires='>3.6.0',
     license='MIT',
     author='dmarkey',
